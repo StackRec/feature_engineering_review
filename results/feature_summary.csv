@@ -1,0 +1,2 @@
+feature,original_skewness,transformed_skewness,transformation,roc_auc_change,accuracy_change
+campaign,5.233435648017119,1.2751595493037966,log1p,0.0021563342318059453,0.0008333333333332416

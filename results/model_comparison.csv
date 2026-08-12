@@ -1,0 +1,3 @@
+model,feature_treatment,roc_auc,accuracy
+Baseline,Raw campaign,0.8636455525606469,0.8958333333333334
+Updated,log1p(campaign),0.8658018867924528,0.8966666666666666

@@ -12,8 +12,8 @@ from sklearn.model_selection import train_test_split
 # -------------------------------------------------------------------
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = PROJECT_ROOT / "data"
 
+DATA_DIR = PROJECT_ROOT / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_FILE = DATA_DIR / "bank.csv"
@@ -28,7 +28,7 @@ RANDOM_STATE = 42
 
 
 # -------------------------------------------------------------------
-# Download outer archive
+# Download UCI Bank Marketing dataset
 # -------------------------------------------------------------------
 
 print("Downloading UCI Bank Marketing dataset...")
@@ -44,22 +44,30 @@ print(
 
 # -------------------------------------------------------------------
 # Open outer ZIP
+#
+# The UCI archive currently contains:
+#
+#   bank.zip
+#   bank-additional.zip
+#
+# We want bank.zip because it contains bank-full.csv.
 # -------------------------------------------------------------------
 
 with ZipFile(BytesIO(outer_zip_bytes)) as outer_zip:
 
-    files = outer_zip.namelist()
+    outer_files = outer_zip.namelist()
 
+    print()
     print("Files found in outer archive:")
 
-    for name in files:
-        print(f"   {name}")
+    for filename in outer_files:
+        print(f"   {filename}")
 
-    # Find nested bank.zip
     bank_zip_files = [
-        name
-        for name in files
-        if name.lower().endswith("bank.zip")
+        filename
+        for filename in outer_files
+        if filename.lower().endswith("/bank.zip")
+        or filename.lower() == "bank.zip"
     ]
 
     if not bank_zip_files:
@@ -81,19 +89,18 @@ with ZipFile(BytesIO(outer_zip_bytes)) as outer_zip:
 
 with ZipFile(BytesIO(bank_zip_bytes)) as bank_zip:
 
-    files = bank_zip.namelist()
+    bank_files = bank_zip.namelist()
 
     print()
     print("Files found in bank.zip:")
 
-    for name in files:
-        print(f"   {name}")
+    for filename in bank_files:
+        print(f"   {filename}")
 
-    # Find bank-full.csv
     csv_files = [
-        name
-        for name in files
-        if name.lower().endswith("bank-full.csv")
+        filename
+        for filename in bank_files
+        if filename.lower().endswith("bank-full.csv")
     ]
 
     if not csv_files:
@@ -106,52 +113,130 @@ with ZipFile(BytesIO(bank_zip_bytes)) as bank_zip:
     print()
     print(f"Reading dataset: {csv_path}")
 
-    with bank_zip.open(csv_path) as f:
+    with bank_zip.open(csv_path) as file:
 
         df = pd.read_csv(
-            f,
+            file,
             sep=";",
             quotechar='"'
         )
 
 
 # -------------------------------------------------------------------
-# Basic preparation
+# Validate the dataset
 # -------------------------------------------------------------------
 
 print()
 print(f"Original dataset shape: {df.shape}")
 
+if "y" not in df.columns:
+    raise ValueError(
+        "Target column 'y' was not found in the dataset."
+    )
 
-# Convert target:
+
+# -------------------------------------------------------------------
+# Convert target variable
 #
-# yes -> 1
-# no  -> 0
-#
+# Original UCI values:
+#     yes -> 1
+#     no  -> 0
+# -------------------------------------------------------------------
+
 df["y"] = (
     df["y"]
+    .str.strip()
+    .str.lower()
     .map({
         "yes": 1,
         "no": 0
     })
-    .astype(int)
+)
+
+
+# Make sure target conversion worked
+if df["y"].isna().any():
+
+    invalid_values = (
+        df.loc[df["y"].isna(), "y"]
+        .unique()
+    )
+
+    raise ValueError(
+        "Unexpected values were found in target column."
+    )
+
+
+df["y"] = df["y"].astype(int)
+
+
+# -------------------------------------------------------------------
+# Show original target distribution
+# -------------------------------------------------------------------
+
+print()
+print("Original target distribution:")
+
+print(
+    df["y"]
+    .value_counts()
+    .sort_index()
+)
+
+print()
+print("Original target proportions:")
+
+print(
+    df["y"]
+    .value_counts(normalize=True)
+    .sort_index()
 )
 
 
 # -------------------------------------------------------------------
-# Create a smaller stratified sample
+# Create stratified sample
+#
+# This preserves approximately the same class distribution as the
+# original dataset while reducing the dataset to 6,000 observations.
 # -------------------------------------------------------------------
 
 if len(df) > SAMPLE_SIZE:
 
-    df, _ = train_test_split(
-        df,
+    sampled_indices, _ = train_test_split(
+        df.index,
         train_size=SAMPLE_SIZE,
         random_state=RANDOM_STATE,
         stratify=df["y"]
     )
 
-    df = df.reset_index(drop=True)
+    df = df.loc[sampled_indices].copy()
+
+    # Shuffle rows so that positive/negative observations aren't
+    # grouped together.
+    df = df.sample(
+        frac=1,
+        random_state=RANDOM_STATE
+    ).reset_index(drop=True)
+
+else:
+
+    print()
+    print(
+        f"Dataset contains {len(df)} rows, "
+        f"so no sampling was required."
+    )
+
+
+# -------------------------------------------------------------------
+# Validate final dataset
+# -------------------------------------------------------------------
+
+if df["y"].nunique() < 2:
+
+    raise ValueError(
+        "Final dataset contains only one target class. "
+        "Both classes are required for model training."
+    )
 
 
 # -------------------------------------------------------------------
@@ -165,21 +250,37 @@ df.to_csv(
 
 
 # -------------------------------------------------------------------
-# Summary
+# Final summary
 # -------------------------------------------------------------------
 
 print()
-print("Dataset preparation complete.")
-print(f"Final dataset shape: {df.shape}")
-print(f"Saved to: {OUTPUT_FILE}")
+print("=" * 60)
+print("Dataset preparation complete")
+print("=" * 60)
 
 print()
-print("Target distribution:")
+print(f"Final dataset shape: {df.shape}")
+
+print()
+print(f"Saved to:")
+print(OUTPUT_FILE)
+
+print()
+print("Final target distribution:")
+
+print(
+    df["y"]
+    .value_counts()
+    .sort_index()
+)
+
+print()
+print("Final target proportions:")
 
 print(
     df["y"]
     .value_counts(normalize=True)
-    .rename("proportion")
+    .sort_index()
 )
 
 print()
@@ -187,3 +288,8 @@ print("Columns:")
 
 for column in df.columns:
     print(f"  - {column}")
+
+print()
+print("Dataset preview:")
+
+print(df.head())
