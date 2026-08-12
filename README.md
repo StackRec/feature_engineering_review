@@ -14,13 +14,10 @@ The recording workflow:
 5. Apply `log1p(campaign)` as a feature-engineering change.
 6. Run the updated model.
 7. Open `results/model_comparison.csv` in Numbers.
-8. Create a one-page stakeholder summary and export it as `feature_engineering_review_deliverable.pdf`.
+8. Document the change in metrics and export it as `feature_engineering_review_deliverable.pdf`.
 
 ## Dataset setup
 The UCI dataset should be downloaded before recording and placed at:
 `data/bank.csv`
 
 The setup script can download and prepare a small task subset.
-
-## Important
-Do not run the downloader or generate files during the recording if your task rules require preparation to happen before recording. The prepared files are intended to be ready before the recording starts.
