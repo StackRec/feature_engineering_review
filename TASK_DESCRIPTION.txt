@@ -1,0 +1,13 @@
+TASK DESCRIPTION
+
+Role: Data Scientist supporting a machine-learning team.
+
+Review an existing bank marketing classification pipeline hosted in GitHub. Use VS Code to inspect the feature-engineering process, identify a numerical feature with strong skew, apply an appropriate transformation, and compare the baseline and updated model performance. Use Numbers to summarize the result and create a concise stakeholder-ready recommendation.
+
+Apps:
+1. GitHub (browser)
+2. VS Code
+3. Numbers
+
+Final deliverable:
+feature_engineering_review_deliverable.pdf

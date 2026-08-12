@@ -1,0 +1,16 @@
+APPS TOPOLOGY
+1. GitHub — open repository, review README and model analysis file.
+2. VS Code — inspect pipeline, run baseline, inspect skewness, apply log1p transformation, run updated model.
+3. Numbers — open model_comparison.csv, compare metrics, create a simple chart, write recommendation, export PDF.
+
+REQUEST
+Review a bank marketing classification model, investigate a highly skewed feature, test a log transformation, and summarize the modeling recommendation.
+
+METADATA TASK DESCRIPTION
+1. Review the project objective and existing modeling pipeline in GitHub.
+2. Run the baseline model in VS Code and inspect feature skewness.
+3. Identify campaign as a candidate for transformation.
+4. Apply log1p(campaign) and rerun the model.
+5. Compare ROC-AUC and accuracy between baseline and updated versions.
+6. Use Numbers to create a concise comparison and recommendation.
+7. Export the final one-page PDF deliverable.
